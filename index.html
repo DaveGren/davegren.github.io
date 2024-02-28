@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metal Sheet Stock Management</title>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.5/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.5/firebase-database.js"></script>
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        // Get a reference to the database service
+        const database = firebase.database();
+    </script>
+</head>
+<body>
+    <h1>Metal Sheet Stock Management</h1>
+    <form id="metalSheetForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" required><br>
+        <label for="thickness">Thickness (mm):</label>
+        <input type="number" id="thickness" required><br>
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" required><br>
+        <button type="submit">Add Metal Sheet</button>
+    </form>
+
+    <hr>
+
+    <h2>Metal Sheets</h2>
+    <ul id="metalSheetList"></ul>
+
+    <script>
+        const metalSheetForm = document.getElementById('metalSheetForm');
+        const metalSheetList = document.getElementById('metalSheetList');
+
+        metalSheetForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const thickness = parseFloat(document.getElementById('thickness').value);
+            const quantity = parseInt(document.getElementById('quantity').value);
+
+            if (name && thickness && quantity) {
+                // Push data to Firebase
+                database.ref('metalSheets').push({
+                    name: name,
+                    thickness: thickness,
+                    quantity: quantity
+                });
+
+                // Clear form fields
+                metalSheetForm.reset();
+            } else {
+                alert('Please fill out all fields.');
+            }
+        });
+
+        // Function to render metal sheets
+        function renderMetalSheets(data) {
+            const metalSheets = Object.values(data);
+            metalSheetList.innerHTML = '';
+            metalSheets.forEach((metalSheet, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${metalSheet.name}</strong> - Thickness: ${metalSheet.thickness} mm - Quantity: ${metalSheet.quantity}
+                <button onclick="deleteMetalSheet('${index}')">Delete</button>`;
+                metalSheetList.appendChild(li);
+            });
+        }
+
+        // Listen for changes in the database and update the UI
+        database.ref('metalSheets').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                renderMetalSheets(data);
+            } else {
+                metalSheetList.innerHTML = '<li>No metal sheets found</li>';
+            }
+        });
+
+        // Function to delete a metal sheet
+        function deleteMetalSheet(index) {
+            const metalSheetRef = database.ref('metalSheets');
+            metalSheetRef.child(index).remove();
+        }
+    </script>
+</body>
+</html>
